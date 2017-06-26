@@ -1,0 +1,29 @@
+# Java基础
+>* this、super、static、transient、finally、final、const、volatile、synchronized
+>* 集合(体系类图、各自特点)
+>* HashMap原理
+>* 序列化机制和原理
+# 数据结构与算法
+>* 红黑树
+>* BTree(B+Tree、B-Tree)
+>* 二分查找、分块查找、哈希查找
+>* 快速排序、合并排序
+# 设计模式
+>* 工厂模式
+>* 代理模式
+>* 单例模式
+>* 观察者模式
+>* 责任链模式
+>* 装饰器模式
+>* 适配器模式
+>* 模版方法模式
+# 框架
+>* Spring IOC与AOP
+>* Spring 事务(特性、隔离级别)
+# 并发基础
+>* 线程状态
+>* 锁
+>* 线程池
+# 性能优化
+>* JVM内存结构
+>* 垃圾回收
