@@ -3,11 +3,24 @@
 >* 集合(体系类图、各自特点)
 >* HashMap原理
 >* 序列化机制和原理
+# JVM
+>* JVM内存结构
+>* 垃圾回收
+>* 类加载机制
+>* happens-before规则
 # 数据结构与算法
 >* 红黑树
 >* BTree(B+Tree、B-Tree)
 >* 二分查找、分块查找、哈希查找
 >* 快速排序、合并排序
+# WEB基础
+>* Servlet
+>* Http
+# 数据库
+>* 索引
+>* 事务
+>* 高并发与高可用
+>* SQL调优
 # 设计模式
 >* 工厂模式
 >* 代理模式
@@ -21,9 +34,17 @@
 >* Spring IOC与AOP
 >* Spring 事务(特性、隔离级别)
 # 并发基础
->* 线程状态
->* 锁
+>* 线程状态与控制(start、run、wait、notify、sleep、yield、join、interrupt、stop)
+>* ThreadLocal
+>* 同步(synchronized)、锁(ReentrantLock)、死锁
 >* 线程池
-# 性能优化
->* JVM内存结构
->* 垃圾回收
+# 分布式
+>* 分布式session
+>* 分布式事务(秒杀减库存)
+# 高并发与高可用架构
+>* 集群(Mysql)
+>* 微服务(Dubbo)
+>* 负载均衡(Nginx)
+>* 消息队列(RabbitMQ)与缓存(Redis)
+>* 连接池(Druid)
+>* 分库分表(Mycat、shareding-jdbc)
