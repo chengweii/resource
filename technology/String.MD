@@ -5,18 +5,104 @@ String的值是final修饰的，这代表String的值初始化后就是常量，
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence 
 {
-    /** The value is used for character storage. */
     private final char value[];
+    private int hash;
 
-    /** Cache the hash code for the string */
-    private int hash; // Default to 0
+    public String() {
+        this.value = new char[0];
+    }
+
+    public String(String original) {
+        this.value = original.value;
+        this.hash = original.hash;
+    }
+
+    public String(char value[]) {
+        this.value = Arrays.copyOf(value, value.length);
+    }
+}
+```
+
+## String常量是在常量池中的，并且常量池中的String可以被共享使用。
+常量池中的String被共享使用，达到节省内存，使数据集更小，（通常会）让程序运行更快的效果，注意：默认只有String常量(字面量常量、编译期认定的常量)会被放进常量池。
+```java
+public class StringTest {
+	public static void stringStorageTest() {
+		/**
+		 * 情景一：字符串池 JAVA虚拟机(JVM)中存在着一个字符串池，其中保存着很多字符串; 并且可以被共享使用，因此它提高了效率。
+		 * 由于String类是final的，它的值一经创建就不可改变。
+		 * 字符串池由String类维护，我们可以调用intern()方法来访问字符串池。
+		 */
+		String s1 = "abc";
+		// ↑ 在字符串池创建了一个字符串
+		String s2 = "abc";
+		// ↑ 字符串池已经存在字符串 "abc" (共享),所以创建0个对象，累计创建一个对象
+		System.out.println("s1 == s2 : " + (s1 == s2));
+		// ↑ true 指向同一个对象
+		System.out.println("s1.equals(s2) : " + (s1.equals(s2)));
+		// ↑ true 值相等
+		// ↑------------------------------------------------------over
+
+		/**
+		 * 情景二： 由于常量的值在编译的时候就被确定(优化)了。 在这里，"ab"和"cd"都是常量，因此变量str3的值在编译时就可以确定。
+		 * 这行代码编译后的效果等同于： String str3 = "abcd";
+		 */
+		String str1 = "ab" + "cd"; // 1个对象
+		String str11 = "abcd";
+		System.out.println("str1 = str11 : " + (str1 == str11));
+		// ↑true 编译期优化
+		// ↑------------------------------------------------------over
+
+		/**
+		 * 情景三： 局部变量str2,str3存储的是存储两个拘留字符串对象(intern字符串对象)的地址。
+		 * 
+		 * 第三行代码原理(str2+str3)： 运行期JVM首先会在堆中创建一个StringBuilder类，
+		 * 同时用str2指向的拘留字符串对象完成初始化， 然后调用append方法完成对str3所指向的拘留字符串的合并，
+		 * 接着调用StringBuilder的toString()方法在堆中创建一个String对象，
+		 * 最后将刚生成的String对象的堆地址存放在局部变量str3中。
+		 * 
+		 * 而str5存储的是字符串池中"abcd"所对应的拘留字符串对象的地址。 str4与str5地址当然不一样了。
+		 * 
+		 * 内存中实际上有五个字符串对象： 三个拘留字符串对象、一个String对象和一个StringBuilder对象。
+		 */
+		String str2 = "ab"; // 1个对象
+		String str3 = "cd"; // 1个对象
+		String str4 = str2 + str3;
+		String str5 = "abcd";
+		System.out.println("str4 = str5 : " + (str4 == str5));
+		// false
+		// ↑------------------------------------------------------over
+
+		/**
+		 * 情景四： JAVA编译器对string + 基本类型/常量 是当成常量表达式直接求值来优化的。
+		 * 运行期的两个string相加，会产生新的对象的，存储在堆(heap)中
+		 */
+		String str6 = "b";
+		String str7 = "a" + str6;
+		String str67 = "ab";
+		System.out.println("str7 = str67 : " + (str7 == str67));
+		// ↑false
+		// ↑str6为变量，在运行期才会被解析。
+		final String str8 = "b";
+		String str9 = "a" + str8;
+		String str89 = "ab";
+		System.out.println("str9 = str89 : " + (str9 == str89));
+		// ↑true
+		// ↑str8为常量变量，编译期会被优化
+		// ↑------------------------------------------------------over
+	}
+
+	public static void main(String[] args) {
+		stringStorageTest();
+	}
+
 }
 ```
 
 ## ""与new String()的区别
 
 ## 通过intern使用常量池
-对于String，它是可以在常量池中的，并且常量池中的String可以被共享使用，所以针对重复度较高的字符串，使用它可以节省内存，使数据集更小，（通常会）让程序运行更快。
+由于只有String常量默认会被放进常量池，所以针对重复使用率较高的String变量，可以通过intern方法来使用常量池来提升程序性能。
 
 
 # StringBuffer、StringBuilder
