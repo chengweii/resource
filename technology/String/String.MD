@@ -101,8 +101,9 @@ public class StringTest {
 
 ## ""与new String()的区别
 
+
 ## 通过intern使用常量池
-由于只有String常量默认会被放进常量池，所以针对重复使用率较高的String变量，可以通过intern方法来使用常量池来提升程序性能。
+由于只有String常量默认会被放进常量池，所以针对重复使用率较高的String变量，可以通过intern方法来使用常量池，起到提升程序性能的效果。
 ```java
 public class StringTest {
 	static final int MAX = 1000 * 10000;
@@ -178,7 +179,7 @@ public class StringTest {
 2602ms has elapsed when intern is not used.  
 在使用大量字符串时，对于重复率较高的情况，采用intern效率要好很多；但是对于重复率很低的情况，反而不使用intern效率要高些，原因就是intern操作要比直接使用多一步常量池字符串检查操作，常量池起到的是缓存的作用，但重复率较低的情况导致缓存利用率也会降低，同时又多了一步缓存检查操作，效率反而会不如不使用intern的情况。 
 
->JAVA 使用 jni 调用c++实现的StringTable的intern方法, StringTable的intern方法跟Java中的HashMap的实现是差不多的, 只是不能自动扩容。默认大小是1009。要注意的是，String的String Pool是一个固定大小的Hashtable，默认值大小长度是1009，如果放进String Pool的String非常多，就会造成Hash冲突严重，从而导致链表会很长，而链表长了后直接会造成的影响就是当调用String.intern时性能会大幅下降。在 jdk6中StringTable是固定的，就是1009的长度，所以如果常量池中的字符串过多就会导致效率下降很快。在jdk7中，StringTable的长度可以通过一个参数指定：-XX:StringTableSize=99991 
+>JAVA 使用 jni 调用c++实现的StringTable的intern方法, StringTable的intern方法跟Java中的HashMap的实现是差不多的, 只是不能自动扩容。默认大小是1009。要注意的是，String的String Pool是一个固定大小的Hashtable，默认值大小长度是1009，如果放进String Pool的String非常多，就会造成Hash冲突严重，从而导致链表会很长，而链表长了后直接会造成的影响就是当调用String.intern时性能会大幅下降。在 jdk6中StringTable是固定的，就是1009的长度，所以如果常量池中的字符串过多就会导致效率下降很快,由于jdk6中常量池中的对象的内存是分配在 Perm Gen space 中的，所以如果常量池中的字符串过多，大小超过参数 -XX:MaxPermSize=256m 配置的大小，会报 java.lang.OutOfMemoryError:PermGen space 异常。在jdk7中，StringTable的长度可以通过一个参数指定：-XX:StringTableSize=99991 ,jdk7常量池由Perm Gen space搬到了Heap space，所以常量池中的对象的内存是分配在 Heap space 中的，常量池中的字符串过多，大小超过参数 -Xmx20m -XX:-UseGCOverheadLimit 配置的大小，会报 java.lang.OutOfMemoryError:java heap space 异常。
 
 案例：fastjson 1.1.24之前版本进行接口读取时，在读取了近70w条数据后，日志打印变的非常缓慢，检查后发现导致变慢的原因是因为 fastjson 对String#intern方法的使用不当造成的：fastjson 中对所有的 json 的 key 使用了 intern 方法，缓存到了字符串常量池中，这样每次读取的时候就会非常快，大大减少时间和空间。而且 json 的 key 通常都是不变的。这个地方没有考虑到大量的 json key 如果是变化的，那就会给字符串常量池带来很大的负担，而log4j打印日志时使用到JVM的getStackTrace()方法，该方法中打印类名、方法名、文件名都是通过常量池访问的，常量池内数据过多时，访问效率就会受到严重影响。
 ```java
@@ -348,5 +349,5 @@ public class StringTest {
 因为每次执行“+”操作时jvm都要new一个 StringBuilder 对象来处理字符串的连接，这在涉及很多的字符串连接操作时开销会很大,所以还是建议直接使用 StringBuilder 。
 
 # 参考文献  
-[深入理解Java：String](http://www.cnblogs.com/ITtangtang/p/3976820.html)
+[深入理解Java：String](http://www.cnblogs.com/ITtangtang/p/3976820.html)  
 [String的Intern方法详解](http://www.cnblogs.com/wxgblogs/p/5635099.html)
