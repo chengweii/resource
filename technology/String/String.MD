@@ -103,7 +103,105 @@ public class StringTest {
 
 ## 通过intern使用常量池
 由于只有String常量默认会被放进常量池，所以针对重复使用率较高的String变量，可以通过intern方法来使用常量池来提升程序性能。
+```java
+public class StringTest {
+	static final int MAX = 1000 * 10000;
+	static final String[] arr = new String[MAX];
 
+	public static void internTest() {
+		Integer[] DB_DATA = new Integer[10];
+		Random random = new Random(10 * 10000);
+		for (int i = 0; i < DB_DATA.length; i++) {
+			DB_DATA[i] = random.nextInt();
+		}
+		long t = System.currentTimeMillis();
+		for (int i = 0; i < MAX; i++) {
+			arr[i] = String.valueOf(DB_DATA[i % DB_DATA.length]).intern();
+		}
+
+		System.out.println((System.currentTimeMillis() - t) + "ms has elapsed when intern is used.");
+		System.gc();
+	}
+
+	public static void noInternTest() {
+		Integer[] DB_DATA = new Integer[10];
+		Random random = new Random(10 * 10000);
+		for (int i = 0; i < DB_DATA.length; i++) {
+			DB_DATA[i] = random.nextInt();
+		}
+		long t = System.currentTimeMillis();
+		for (int i = 0; i < MAX; i++) {
+			arr[i] = String.valueOf(DB_DATA[i % DB_DATA.length]);
+		}
+
+		System.out.println((System.currentTimeMillis() - t) + "ms has elapsed when intern is not used.");
+		System.gc();
+	}
+
+	static final int MAX2 = 500 * 10000;
+	static final String[] arr2 = new String[MAX];
+	
+	public static void internTestNoRepeat() {
+		long t = System.currentTimeMillis();
+		for (int i = 0; i < MAX2; i++) {
+			arr2[i] = String.valueOf(i).intern();
+		}
+
+		System.out.println((System.currentTimeMillis() - t) + "ms has elapsed when intern is used.");
+		System.gc();
+	}
+
+	public static void noInternTestNoRepeat() {
+		long t = System.currentTimeMillis();
+		for (int i = 0; i < MAX2; i++) {
+			arr2[i] = String.valueOf(i);
+		}
+
+		System.out.println((System.currentTimeMillis() - t) + "ms has elapsed when intern is not used.");
+		System.gc();
+	}
+
+	public static void main(String[] args) throws InterruptedException {
+		internTest();
+		noInternTest();
+		
+		internTestNoRepeat();
+		noInternTestNoRepeat();
+	}
+
+}
+```
+>比较结果：  
+1689ms has elapsed when intern is used.  
+5775ms has elapsed when intern is not used.  
+13601ms has elapsed when intern is used.  
+2602ms has elapsed when intern is not used.  
+在使用大量字符串时，对于重复率较高的情况，采用intern效率要好很多；但是对于重复率很低的情况，反而不使用intern效率要高些，原因就是intern操作要比直接使用多一步常量池字符串检查操作，常量池起到的是缓存的作用，但重复率较低的情况导致缓存利用率也会降低，同时又多了一步缓存检查操作，效率反而会不如不使用intern的情况。 
+
+>JAVA 使用 jni 调用c++实现的StringTable的intern方法, StringTable的intern方法跟Java中的HashMap的实现是差不多的, 只是不能自动扩容。默认大小是1009。要注意的是，String的String Pool是一个固定大小的Hashtable，默认值大小长度是1009，如果放进String Pool的String非常多，就会造成Hash冲突严重，从而导致链表会很长，而链表长了后直接会造成的影响就是当调用String.intern时性能会大幅下降。在 jdk6中StringTable是固定的，就是1009的长度，所以如果常量池中的字符串过多就会导致效率下降很快。在jdk7中，StringTable的长度可以通过一个参数指定：-XX:StringTableSize=99991 
+
+案例：fastjson 1.1.24之前版本进行接口读取时，在读取了近70w条数据后，日志打印变的非常缓慢，检查后发现导致变慢的原因是因为 fastjson 对String#intern方法的使用不当造成的：fastjson 中对所有的 json 的 key 使用了 intern 方法，缓存到了字符串常量池中，这样每次读取的时候就会非常快，大大减少时间和空间。而且 json 的 key 通常都是不变的。这个地方没有考虑到大量的 json key 如果是变化的，那就会给字符串常量池带来很大的负担，而log4j打印日志时使用到JVM的getStackTrace()方法，该方法中打印类名、方法名、文件名都是通过常量池访问的，常量池内数据过多时，访问效率就会受到严重影响。
+```java
+package com.alibaba.fastjson.parser;
+public class SymbolTable{
+	public Entry(char[] ch, int offset, int length, int hash, Entry next){
+		characters = new char[length];
+		System.arraycopy(ch, offset, characters, 0, length);
+		symbol = new String(characters).intern();
+		this.next = next;
+		this.hashCode = hash;
+		this.bytes = null;
+	}
+}
+```
+这个问题 fastjson 在1.1.24版本中已经将这个漏洞修复了。程序加入了一个最大的缓存大小，超过这个大小后就不会再往字符串常量池中放了。
+```java
+public static final int MAX_SIZE = 1024;
+ 
+if (size >= MAX_SIZE) {
+    return new String(buffer, offset, len);
+}
+```
 
 # StringBuffer、StringBuilder
 ## StringBuffer 与 StringBuilder 相同之处
@@ -247,7 +345,8 @@ public class StringTest {
 * StringBuilder 始于 JDK 1.5  
 * 从 JDK 1.5 开始，带有字符串变量的连接操作（+），JVM 内部采用的是 StringBuilder 来实现的，而之前这个操作是采用 StringBuffer 实现的。  
 
-因为每次执行“+”操作时jvm都要new一个StringBuffer对象来处理字符串的连接，这在涉及很多的字符串连接操作时开销会很大,所以还是建议使用StringBuilder。
+因为每次执行“+”操作时jvm都要new一个 StringBuilder 对象来处理字符串的连接，这在涉及很多的字符串连接操作时开销会很大,所以还是建议直接使用 StringBuilder 。
 
 # 参考文献  
 [深入理解Java：String](http://www.cnblogs.com/ITtangtang/p/3976820.html)
+[String的Intern方法详解](http://www.cnblogs.com/wxgblogs/p/5635099.html)
