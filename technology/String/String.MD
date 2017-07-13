@@ -100,7 +100,41 @@ public class StringTest {
 ```
 
 ## ""与new String()的区别
+字符串声明方式包括直接使用双引号、还可以通过new关键字。
+* 直接使用双引号声明出来的String对象会存储在常量池中，以供重复使用，另外需要注意的是：JDK1.6及以前版本常量池位于 Perm Gen space 中，String对象的内存分配也在此；JDK1.7版本开始常量池搬到了 Heap space 中，String对象的内存分配自然也搬到了 Heap space 中。
+* 通过new关键字声明出来的String对象则会直接存储到 Heap space 中。
+```java
+public class StringTest {
+	public static void stringStorageTest() {
+		/**
+		 * 情景一：关于new String("")
+		 * 
+		 */
+		String s31 = "abc";
+		String s3 = new String("abc");
+		// ↑ 创建了两个对象，一个存放在字符串池中，一个存在与堆区中；
+		// ↑ 还有一个对象引用s3存放在栈中
+		String s4 = new String("abc");
+		// ↑ 字符串池中已经存在“abc”对象，所以只在堆中创建了一个对象
+		System.out.println("s3 == s4 : " + (s3 == s4));
+		// ↑false s3和s4栈区的地址不同，指向堆区的不同地址；
+		System.out.println("s3.equals(s4) : " + (s3.equals(s4)));
+		// ↑true s3和s4的值相同
+		System.out.println("s1 == s3 : " + (s1 == s3));
+		// ↑false 存放的地区多不同，一个栈区，一个堆区
+		System.out.println("s1.equals(s3) : " + (s1.equals(s3)));
+		// ↑true 值相同
+		System.out.println("s3 == s31 : " + (s3 == s31));
+		// ↑false s31对象在Perm Gen space中，s3对象在Heap space中，二者不是一个对象
+		// ↑------------------------------------------------------over
+	}
 
+	public static void main(String[] args) {
+		stringStorageTest();
+	}
+
+}
+```
 
 ## 通过intern使用常量池
 由于只有String常量默认会被放进常量池，所以针对重复使用率较高的String变量，可以通过intern方法来使用常量池，起到提升程序性能的效果。
@@ -180,6 +214,54 @@ public class StringTest {
 在使用大量字符串时，对于重复率较高的情况，采用intern效率要好很多；但是对于重复率很低的情况，反而不使用intern效率要高些，原因就是intern操作要比直接使用多一步常量池字符串检查操作，常量池起到的是缓存的作用，但重复率较低的情况导致缓存利用率也会降低，同时又多了一步缓存检查操作，效率反而会不如不使用intern的情况。 
 
 >JAVA 使用 jni 调用c++实现的StringTable的intern方法, StringTable的intern方法跟Java中的HashMap的实现是差不多的, 只是不能自动扩容。默认大小是1009。要注意的是，String的String Pool是一个固定大小的Hashtable，默认值大小长度是1009，如果放进String Pool的String非常多，就会造成Hash冲突严重，从而导致链表会很长，而链表长了后直接会造成的影响就是当调用String.intern时性能会大幅下降。在 jdk6中StringTable是固定的，就是1009的长度，所以如果常量池中的字符串过多就会导致效率下降很快,由于jdk6中常量池中的对象的内存是分配在 Perm Gen space 中的，所以如果常量池中的字符串过多，大小超过参数 -XX:MaxPermSize=256m 配置的大小，会报 java.lang.OutOfMemoryError:PermGen space 异常。在jdk7中，StringTable的长度可以通过一个参数指定：-XX:StringTableSize=99991 ,jdk7常量池由Perm Gen space搬到了Heap space，所以常量池中的对象的内存是分配在 Heap space 中的，常量池中的字符串过多，大小超过参数 -Xmx20m -XX:-UseGCOverheadLimit 配置的大小，会报 java.lang.OutOfMemoryError:java heap space 异常。
+```java
+public class StringTest {
+	public static void internTestJDK8() {
+		// 因为常量池所在的PermGen space与Heap space是隔离的，JDK7前 intern会将首次出现的字符串对象完全拷贝到常量池所在的Perm Gen space中。
+		// 而JDK7后常量池搬到了Heap space，为了节省空间，intern会将首次出现的字符串对象的引用拷贝到常量池中。
+		String str1 = new String("a") + new String("b");
+		System.out.println(str1.intern() == str1);
+		//↑JDK6 false  JDK8 true
+		System.out.println(str1 == "ab");
+		//↑JDK6 false  JDK8 true
+		System.gc();
+	}
+
+	public static void internTestJDK8WithPredefinedString() {
+		// 因为常量池所在的PermGen space与Heap space是隔离的，JDK7前 intern会将首次出现的字符串对象完全拷贝到常量池所在的Perm Gen space中。
+		// 而JDK7后常量池搬到了Heap space，为了节省空间，intern会将首次出现的字符串对象的引用拷贝到常量池中。
+		String str2 = "cd";
+
+		String str1 = new String("c") + new String("d");
+		System.out.println(str1.intern() == str1);
+		//↑JDK6 false  JDK8 false str1.intern()的地址为str2对象的地址，str1为在heap space上新创建的字符串对象，二者不是一个对象
+		System.out.println(str1 == "cd");
+		//↑JDK6 false  JDK8 false str1为在heap space上新创建的字符串对象，
+		System.gc();
+	}
+
+	public static void internTestJDK8WithManyString() {
+		String str1 = new String("e") + new String("f");
+		String str2 = null;
+		
+		// heap space中存在大量字符串时，会导致intern失效，此情况应该与以下案例fastjson BUG问题类似，常量池中字符串过多，超过一定限制，就不会再往常量池中放了。
+		noInternTestNoRepeat();
+		
+		str2 = str1.intern();
+		
+		System.out.println(str2 == str1);
+		System.out.println(str1 == "ef");
+		System.gc();
+	}
+
+	public static void main(String[] args) {
+		internTestJDK8();
+		internTestJDK8WithPredefinedString();
+		internTestJDK8WithManyString();
+	}
+
+}
+```
 
 案例：fastjson 1.1.24之前版本进行接口读取时，在读取了近70w条数据后，日志打印变的非常缓慢，检查后发现导致变慢的原因是因为 fastjson 对String#intern方法的使用不当造成的：fastjson 中对所有的 json 的 key 使用了 intern 方法，缓存到了字符串常量池中，这样每次读取的时候就会非常快，大大减少时间和空间。而且 json 的 key 通常都是不变的。这个地方没有考虑到大量的 json key 如果是变化的，那就会给字符串常量池带来很大的负担，而log4j打印日志时使用到JVM的getStackTrace()方法，该方法中打印类名、方法名、文件名都是通过常量池访问的，常量池内数据过多时，访问效率就会受到严重影响。
 ```java
