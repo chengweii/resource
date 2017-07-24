@@ -39,6 +39,7 @@
 * Mybatis 基础支撑(事务、缓存、连接池)
 # 并发基础
 * 线程状态与控制(start、run、wait、notify、sleep、yield、join、interrupt、stop)
+* 共享与原子性操作(volatile变量、final变量、基本类型变量与引用)
 * ThreadLocal(ThreadLocal(当前线程)、InheritableThreadLocal(父线程))
 * 同步(synchronized)、锁(ReentrantLock)、死锁
 * 线程池
