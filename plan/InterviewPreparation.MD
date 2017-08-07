@@ -1,8 +1,7 @@
 # Java基础
 * String、StringBuffer、StringBuilder
 * this、super、static
-* transient、final、const、volatile
-* finally、synchronized
+* const、final、finally
 * 集合(体系类图、各自特点)
 * HashMap原理
 * IO、NIO、序列化
@@ -38,11 +37,12 @@
 * Mybatis 数据处理(参数映射、SQL解析、SQL执行、结果映射)
 * Mybatis 基础支撑(事务、缓存、连接池)
 # 并发基础
-* 线程状态与控制(start、run、wait、notify、sleep、yield、join、interrupt、stop)
-* 共享与原子性操作(volatile变量、final变量、基本类型变量与引用)
-* ThreadLocal(ThreadLocal(当前线程)、InheritableThreadLocal(父线程))
-* 同步(synchronized)、锁(ReentrantLock)、死锁
-* 线程池
+* 线程内存模型
+* 线程状态
+* 线程安全
+* 线程通信
+* 性能和可伸缩性
+* 线程应用
 # 分布式
 * 分布式session
 * 分布式事务
