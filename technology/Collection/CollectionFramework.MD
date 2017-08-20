@@ -1,5 +1,5 @@
 # 集合框架
-![集合框架](https://github.com/chengweii/resource/tree/master/technology/Collection/resource/collection-framework-1.jpg)
+![集合框架](https://raw.githubusercontent.com/chengweii/resource/master/technology/Collection/resource/collection-framework-1.jpg)
 ## 链表、字典、队列
 ## 性能
 ## 线程安全
