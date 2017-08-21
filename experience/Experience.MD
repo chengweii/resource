@@ -44,3 +44,18 @@ JVM内存溢出异常，产生该错误的原因大都出于以下原因：JVM�
 Mysql表名区分大小写，其他关键字、字段不区分。
 ## 处理方案
   ● SQL中表名要注意大小写
+
+# 【Java】Tomcat启动报错，Caused by：java.lang.NoClassDefFoundError：LLogger
+## 异常描述
+邮箱Maven项目导入后，部署到tomcat运行报错：
+Caused by: org.apache.catalina.LifecycleException: Failed to start component [StandardEngine[Catalina].StandardHost[localhost].StandardContext[/fwpt]]
+at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:162)
+... 6 more
+Caused by: java.lang.NoClassDefFoundError: LLogger;
+at java.lang.Class.getDeclaredFields0(Native Method)
+at java.lang.Class.privateGetDeclaredFields(Class.java:2583)
+at java.lang.Class.getDeclaredFields(Class.java:1916)
+## 处理方案
+1.检查tomcat的webapp部署目录下发现lib包未成功引入，原因为eclipse的配置中：Deployment Assembly中未将Maven 依赖包部署导致，将其配置进去，重新部署即可。 
+
+![Deployment Assembly](https://raw.githubusercontent.com/chengweii/resource/master/experience/resource/experience-1.jpg)
