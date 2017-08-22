@@ -14,7 +14,7 @@
 
 **应用场景**
 *  Java中常用的集合框架中的实现类HashSet、TreeSet、ArrayList、ArrayDeque、LinkedList、HashMap、TreeMap都是线程不安全的，如果有多个线程同时访问它们，且同时有多个线程修改他们的时候，将会出现如读脏数据等错误。Collections给出了解决方案，提供了synchronizedCollection方法来实现线程安全，该方法返回一个线程安全容器，可以理解为适配器。从源码中可以看到，SynchronizedCollection关联现有的collection对象，通过委托的方式调用现有对象的方法，只做了synchronized同步处理。java.util.Collections.synchronizedCollection(Collection<T> c);
-```
+```java
 public class Collections {
   public static <T> Collection<T> synchronizedCollection(Collection<T> c) {
     return new SynchronizedCollection<>(c);
@@ -91,7 +91,7 @@ public class Collections {
 
 **应用场景**
 * Spring事件监听机制的实现
-```
+```java
 public abstract class AbstractApplicationContext extends DefaultResourceLoader
         implements ConfigurableApplicationContext, DisposableBean {
 　　private ApplicationEventMulticaster applicationEventMulticaster;
@@ -204,7 +204,7 @@ public abstract class AbstractApplicationEventMulticaster
 
 **应用场景**
 * Servlet使用
-```
+```java
 public abstract class HttpServlet extends GenericServlet implements java.io.Serializable {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String protocol = req.getProtocol();
@@ -245,7 +245,7 @@ public class DispatcherServlet extends FrameworkServlet {
 }
 ```
 * Spring扩展JdbcTemplate 
-```
+```java
 //一、模版方法
 public abstract class JdbcTemplate {
 	// template method
@@ -386,7 +386,7 @@ public class Test{
 **应用场景**
 * Macro（宏）批量命令的执行
 * 多线程的Runnable
-```
+```java
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 public class ThreadPoolExecutorTest {
