@@ -7,7 +7,8 @@
 **适配器模式把一个类的接口变换成客户端所期待的另一种接口，从而使原本因接口不匹配而无法在一起工作的两个类能够在一起工作，一般有两种实现方式：类适配器、对象适配器。**
 
 类适配器：通过继承来实现适配器功能。适配器实现接口A，通过继承接口B访问B接口。
-![类适配器](https://raw.githubusercontent.com/chengweii/resource/master/technology/DesignPattern/resource/design-pattern-1.png)
+![类适配器](https://raw.githubusercontent.com/chengweii/resource/master/technology/DesignPattern/resource/design-pattern-1.png)  
+
 对象适配器：通过继承来实现适配器功能。适配器实现接口A，通过组合接口B访问B接口。
 ![对象适配器](https://raw.githubusercontent.com/chengweii/resource/master/technology/DesignPattern/resource/design-pattern-2.png)
 
