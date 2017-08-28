@@ -18,7 +18,6 @@ size(), isEmpty(), get(), set()方法均能在常数时间内完成，add()方�
 > <b>Fail-Fast机制:</b>由于ArrayList不是线程安全的，因此如果在使用迭代器的过程中有其他线程修改了ArrayList，那么将抛出ConcurrentModificationException，这就是所谓fail-fast策略。  
 这一策略在源码中的实现是通过modCount域，modCount顾名思义就是修改次数，对ArrayList内容的修改都将增加这个值，那么在迭代器初始化过程中会将这个值赋给迭代器的expectedModCount。在迭代过程中，判断modCount跟expectedModCount是否相等，如果不相等就表示已经有其他线程修改了ArrayList。(注意：在java8之前modCount声明为volatile，保证线程之间修改的可见性，但java8开始,modCount去除了volatile修饰符，毕竟这个类是声明为非线程安全的。volatile变量的读写需要一些内存关卡，开销变大，还没什么卵用。)
 
-
 #### 使用注意
 * 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定ArrayList实例的容量，或者通过调用ensureCapacity()方法来手动增加ArrayList实例的容量，以减少递增式再扩容导致的性能损耗。
 ### Vector
@@ -125,3 +124,4 @@ public E get(int index) {
 [java.util.HashMap 源码解读及其进化](https://coderbee.net/index.php/java/20131018/519)  
 [HashMap,ArrayList,LinkedList等的性能比较](http://blog.csdn.net/superoscar007/article/details/8542793)  
 [CopyOnWriteArrayList与Collections.synchronizedList的性能对比](http://blog.csdn.net/zljjava/article/details/48139465)  
+[聊聊并发-Java中的Copy-On-Write容器](http://ifeve.com/java-copy-on-write/)  
