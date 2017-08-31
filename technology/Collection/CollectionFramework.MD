@@ -25,7 +25,7 @@ Vector内部与ArrayList大致相同，但该类实现了同步，是ArrayList�
 #### 实现原理
 Vector内部与ArrayList大致相同，但该类实现了同步，在大部分操作方法上使用了synchronized关键字，导致其在多线程场景下效率极其低下，基本已被弃用。
 #### 使用注意
-* 尽管Vector类实现了线程安全，但对于该类执行多个操作时，为了保证原子性，还是要添加同步代码的。
+* 尽管Vector类实现了线程安全，但对于该类执行多个操作时，为了保证原子性，还是要添加同步代码的，否则还是会存在线程安全问题。
 ```java
 private static Vector<Integer> vector=new Vector();
 
@@ -100,9 +100,19 @@ public E get(int index) {
 * 因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象，容易引起内存问题。
 * CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
 ## 队列
-
-
+### Stack
+通过继承Vector类，Stack类可以很容易的实现他本身的功能。因为大部分的功能在Vector里面已经提供支持了。由于Vector是通过数组实现的，这就意味着，Stack也是通过数组实现的，而非链表。
+Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。
+#### 实现原理
+Stack类通过继承Vector类实现本身功能。Stack最大的长度取决于vector里面数组能有多长(vector最大能取到Integer.MAX_VALUE)。 
+#### 使用注意
+* 由于自身功能基本靠继承Vector实现，所以Vector存在的问题Stack也同样存在。所以，如果你要使用栈做类似的业务.那么单线程的你可以选择LinkedList,多线程情况你可以选择非阻塞队列ConcurrentLinkedQueue或者阻塞队列BlockingQueue。  
+### ConcurrentLinkedQueue
+ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，它采用先进先出的规则对节点进行排序，当我们添加一个元素的时候，它会添加到队列的尾部，当我们获取一个元素时，它会返回队列头部的元素。该队列为单向队列，对应双向队列的实现是ConcurrentLinkedDeque。基于CAS的“wait－free”（常规无等待）来实现，CAS并不是一个算法，它是一个CPU直接支持的硬件指令，这也就在一定程度上决定了它的平台相关性。
+#### 实现原理
+#### 使用注意
 ## 哈希表
+
 
 ## 功能对比
 |实现类|线程安全|保持插入顺序|可重复|可排序|扩容算法|性能对比|
@@ -125,3 +135,4 @@ public E get(int index) {
 [HashMap,ArrayList,LinkedList等的性能比较](http://blog.csdn.net/superoscar007/article/details/8542793)  
 [CopyOnWriteArrayList与Collections.synchronizedList的性能对比](http://blog.csdn.net/zljjava/article/details/48139465)  
 [聊聊并发-Java中的Copy-On-Write容器](http://ifeve.com/java-copy-on-write/)  
+[ConcurrentLinkedQueue源码分析](http://www.zsfblues.com/2016/06/15/ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/)  
