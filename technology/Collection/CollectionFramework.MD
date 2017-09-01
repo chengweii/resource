@@ -1,6 +1,8 @@
 # 集合框架
 ![集合框架](https://raw.githubusercontent.com/chengweii/resource/master/technology/Collection/resource/collection-framework-1.jpg)
+
 ## 链表
+
 ### ArrayList
 ArrayList实现了List接口，是顺序容器，即元素存放的数据与放进去的顺序相同，允许放入null元素，底层通过对象数组实现。  
 该类还实现了Serializable、Cloneable接口，支持序列化和克隆。  
@@ -17,9 +19,9 @@ size(), isEmpty(), get(), set()方法均能在常数时间内完成，add()方�
 
 > <b>Fail-Fast机制:</b>由于ArrayList不是线程安全的，因此如果在使用迭代器的过程中有其他线程修改了ArrayList，那么将抛出ConcurrentModificationException，这就是所谓fail-fast策略。  
 这一策略在源码中的实现是通过modCount域，modCount顾名思义就是修改次数，对ArrayList内容的修改都将增加这个值，那么在迭代器初始化过程中会将这个值赋给迭代器的expectedModCount。在迭代过程中，判断modCount跟expectedModCount是否相等，如果不相等就表示已经有其他线程修改了ArrayList。(注意：在java8之前modCount声明为volatile，保证线程之间修改的可见性，但java8开始,modCount去除了volatile修饰符，毕竟这个类是声明为非线程安全的。volatile变量的读写需要一些内存关卡，开销变大，还没什么卵用。)
-
 #### 使用注意
 * 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定ArrayList实例的容量，或者通过调用ensureCapacity()方法来手动增加ArrayList实例的容量，以减少递增式再扩容导致的性能损耗。
+
 ### Vector
 Vector内部与ArrayList大致相同，但该类实现了同步，是ArrayList的线程安全版本实现。
 #### 实现原理
@@ -61,6 +63,7 @@ public static void main(String[] args) {
 ```
 * ArrayList的线程安全版本除了Vector之外，还可以通过Collections.synchronizedList方法生成同步代理对象获得线程安全的功能。
 * 尽管Vector是同步的，但其由于在操作上大量使用synchronized关键字,这种方式严重影响效率,在多线程场景下，还是推荐使用CopyOnWriteArrayList。(注意CopyOnWriteArrayList的实现机制，导致它只能保证数据最终一致性，无法保证实时一致；还有比较占用内存，容易引发GC问题，所以请慎重使用。)
+
 ### CopyOnWriteArrayList
 CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。CopyOnWrite容器非常有用，可以在非常多的并发场景中使用到。
 #### 实现原理
@@ -99,7 +102,9 @@ public E get(int index) {
 * 使用批量添加。因为每次添加，容器每次都会进行复制，所以减少添加次数，可以减少容器的复制次数。
 * 因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象，容易引起内存问题。
 * CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
+
 ## 队列
+
 ### Stack
 通过继承Vector类，Stack类可以很容易的实现他本身的功能。因为大部分的功能在Vector里面已经提供支持了。由于Vector是通过数组实现的，这就意味着，Stack也是通过数组实现的，而非链表。
 Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。
@@ -107,10 +112,12 @@ Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对�
 Stack类通过继承Vector类实现本身功能。Stack最大的长度取决于vector里面数组能有多长(vector最大能取到Integer.MAX_VALUE)。 
 #### 使用注意
 * 由于自身功能基本靠继承Vector实现，所以Vector存在的问题Stack也同样存在。所以，如果你要使用栈做类似的业务.那么单线程的你可以选择LinkedList,多线程情况你可以选择非阻塞队列ConcurrentLinkedQueue或者阻塞队列BlockingQueue。  
+
 ### ConcurrentLinkedQueue
 ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，它采用先进先出的规则对节点进行排序，当我们添加一个元素的时候，它会添加到队列的尾部，当我们获取一个元素时，它会返回队列头部的元素。该队列为单向队列，对应双向队列的实现是ConcurrentLinkedDeque。基于CAS的“wait－free”（常规无等待）来实现，CAS并不是一个算法，它是一个CPU直接支持的硬件指令，这也就在一定程度上决定了它的平台相关性。
 #### 实现原理
 #### 使用注意
+
 ## 哈希表
 
 
