@@ -21,14 +21,155 @@ size(), isEmpty(), get(), set()方法均能在常数时间内完成，add()方�
 > <b>Fail-Fast机制:</b>由于ArrayList不是线程安全的，因此如果在使用迭代器的过程中有其他线程修改了ArrayList，那么将抛出ConcurrentModificationException，这就是所谓fail-fast策略。  
 这一策略在源码中的实现是通过modCount域，modCount顾名思义就是修改次数，对ArrayList内容的修改都将增加这个值，那么在迭代器初始化过程中会将这个值赋给迭代器的expectedModCount。在迭代过程中，判断modCount跟expectedModCount是否相等，如果不相等就表示已经有其他线程修改了ArrayList。(注意：在java8之前modCount声明为volatile，保证线程之间修改的可见性，但java8开始,modCount去除了volatile修饰符，毕竟这个类是声明为非线程安全的。volatile变量的读写需要一些内存关卡，开销变大，还没什么卵用。)
 
+```java
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{
+    //...
+    transient Object[] elementData; // non-private to simplify nested class access
+    public boolean isEmpty() {
+        return size == 0;
+    }
+    public E get(int index) {
+        rangeCheck(index);
+        return elementData(index);
+    }
+    public boolean add(E e) {
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
+        elementData[size++] = e;
+        return true;
+    }
+    private void ensureCapacityInternal(int minCapacity) {
+        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+        }
+
+        ensureExplicitCapacity(minCapacity);
+    }
+    private void ensureExplicitCapacity(int minCapacity) {
+        modCount++;
+        // overflow-conscious code
+        if (minCapacity - elementData.length > 0)
+            grow(minCapacity);
+    }
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    private void grow(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = elementData.length;
+        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        // minCapacity is usually close to size, so this is a win:
+        elementData = Arrays.copyOf(elementData, newCapacity);
+    }
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError();
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
+    }
+    private void writeObject(java.io.ObjectOutputStream s)
+        throws java.io.IOException{
+        // Write out element count, and any hidden stuff
+        int expectedModCount = modCount;
+        s.defaultWriteObject();
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
+        // Write out all elements in the proper order.
+        for (int i=0; i<size; i++) {
+            s.writeObject(elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+    private void readObject(java.io.ObjectInputStream s)
+        throws java.io.IOException, ClassNotFoundException {
+        elementData = EMPTY_ELEMENTDATA;
+        // Read in size, and any hidden stuff
+        s.defaultReadObject();
+        // Read in capacity
+        s.readInt(); // ignored
+        if (size > 0) {
+            // be like clone(), allocate array based upon size not capacity
+            ensureCapacityInternal(size);
+            Object[] a = elementData;
+            // Read in all elements in the proper order.
+            for (int i=0; i<size; i++) {
+                a[i] = s.readObject();
+            }
+        }
+    }
+    //...
+}
+```
+
 #### 使用注意
+* 基于数组快速随机访问的特性，ArrayList非常适合于高频读取的场景；但由于数组容量不足而自动扩容的机制导致ArrayList的写能力会受数据容量不确定性的影响。
 * 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定ArrayList实例的容量，或者通过调用ensureCapacity()方法来手动增加ArrayList实例的容量，以减少递增式再扩容导致的性能损耗。
+* ArrayList未实现同步，是非线程安全的，所以在多线程场景下建议使用CopyOnWriteArrayList。
 
 ### Vector
 Vector内部与ArrayList大致相同，但该类实现了同步，是ArrayList的线程安全版本实现。
 
 #### 实现原理
 Vector内部与ArrayList大致相同，但该类实现了同步，在大部分操作方法上使用了synchronized关键字，导致其在多线程场景下效率极其低下，基本已被弃用。
+
+```java
+public class Vector<E>
+    extends AbstractList<E>
+    implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{
+    //...
+    protected Object[] elementData;
+    public synchronized boolean isEmpty() {
+        return elementCount == 0;
+    }
+    public synchronized int lastIndexOf(Object o) {
+        return lastIndexOf(o, elementCount-1);
+    }
+    public synchronized E get(int index) {
+        if (index >= elementCount)
+            throw new ArrayIndexOutOfBoundsException(index);
+
+        return elementData(index);
+    }
+    public synchronized boolean add(E e) {
+        modCount++;
+        ensureCapacityHelper(elementCount + 1);
+        elementData[elementCount++] = e;
+        return true;
+    }
+    private void ensureCapacityHelper(int minCapacity) {
+        // overflow-conscious code
+        if (minCapacity - elementData.length > 0)
+            grow(minCapacity);
+    }
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    private void grow(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = elementData.length;
+        int newCapacity = oldCapacity + ((capacityIncrement > 0) ?
+                                         capacityIncrement : oldCapacity);
+        if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        elementData = Arrays.copyOf(elementData, newCapacity);
+    }
+    private static int hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) // overflow
+            throw new OutOfMemoryError();
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+            Integer.MAX_VALUE :
+            MAX_ARRAY_SIZE;
+    }
+    //...
+}
+```
 
 #### 使用注意
 * 尽管Vector类实现了线程安全，但对于该类执行多个操作时，为了保证原子性，还是要添加同步代码的，否则还是会存在线程安全问题。
@@ -113,14 +254,111 @@ public E get(int index) {
 * 因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象，容易引起内存问题。
 * CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
 
+### LinkedList
+LinkedList是基于双向链表实现的，插入删除操作性能优异，随机访问能力很差，无容量限制。LinkedList允许null元素。LinkedList还实现了Deque接口，可用作堆栈、队列或双端队列。注意，该类未实现同步，是非线程安全的。
+
+#### 实现原理
+①数据存储是基于双向链表实现的。  
+②插入数据很快。先是在双向链表中找到要插入节点的位置index，找到之后，再插入一个新节点。 双向链表查找index位置的节点时，有一个加速动作：若index < 双向链表长度的1/2，则从前向后查找; 否则，从后向前查找。  
+③删除数据很快。先是在双向链表中找到要插入节点的位置index，找到之后，进行如下操作：node.previous.next = node.next;node.next.previous = node.previous;node = null 。查找节点过程和插入一样。  
+④获取数据很慢，需要从Head节点进行查找。  
+⑤遍历数据很慢，每次获取数据都需要从头开始。
+
+```java
+public class LinkedList<E>
+    extends AbstractSequentialList<E>
+    implements List<E>, Deque<E>, Cloneable, java.io.Serializable
+{
+    //...
+    transient Node<E> first;
+    transient Node<E> last;
+    public boolean add(E e) {
+        linkLast(e);
+        return true;
+    }
+    void linkLast(E e) {
+        final Node<E> l = last;
+        final Node<E> newNode = new Node<>(l, e, null);
+        last = newNode;
+        if (l == null)
+            first = newNode;
+        else
+            l.next = newNode;
+        size++;
+        modCount++;
+    }
+    public void push(E e) {
+        addFirst(e);
+    }
+    public E pop() {
+        return removeFirst();
+    }
+    public boolean offer(E e) {
+        return add(e);
+    }
+    public E poll() {
+        final Node<E> f = first;
+        return (f == null) ? null : unlinkFirst(f);
+    }
+    public E peek() {
+        final Node<E> f = first;
+        return (f == null) ? null : f.item;
+    }
+    //...
+}
+```
+
+#### 使用注意
+* LinkedList的特点是该数据结构的两端读写能力很快，所以其使用场景一般为堆栈、队列或双端队列。
+* LinkedList未实现同步，是非线程安全的，所以在多线程场景下建议使用CopyOnWriteArrayList。
+
 ## 队列
 
 ### Stack
+Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。  
 通过继承Vector类，Stack类可以很容易的实现他本身的功能。因为大部分的功能在Vector里面已经提供支持了。由于Vector是通过数组实现的，这就意味着，Stack也是通过数组实现的，而非链表。
-Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。
 
 #### 实现原理
-Stack类通过继承Vector类实现本身功能。Stack最大的长度取决于vector里面数组能有多长(vector最大能取到Integer.MAX_VALUE)。 
+Stack类通过继承Vector类实现本身功能。Stack最大的长度取决于vector里面数组能有多长(vector最大能取到Integer.MAX_VALUE)。
+
+```java
+public class Stack<E> extends Vector<E> {
+    public Stack() {
+    }
+    public E push(E item) {
+        addElement(item);
+
+        return item;
+    }
+    public synchronized E pop() {
+        E       obj;
+        int     len = size();
+
+        obj = peek();
+        removeElementAt(len - 1);
+
+        return obj;
+    }
+    public synchronized E peek() {
+        int     len = size();
+
+        if (len == 0)
+            throw new EmptyStackException();
+        return elementAt(len - 1);
+    }
+    public boolean empty() {
+        return size() == 0;
+    }
+    public synchronized int search(Object o) {
+        int i = lastIndexOf(o);
+
+        if (i >= 0) {
+            return size() - i;
+        }
+        return -1;
+    }
+}
+``` 
 
 #### 使用注意
 * 由于自身功能基本靠继承Vector实现，所以Vector存在的问题Stack也同样存在。所以，如果你要使用栈做类似的业务.那么单线程的你可以选择LinkedList,多线程情况你可以选择非阻塞队列ConcurrentLinkedQueue或者阻塞队列BlockingQueue。  
@@ -138,8 +376,13 @@ ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，�
 HashMap 是一个散列表，它存储的内容是键值对(key-value)映射。HashMap 继承于AbstractMap，实现了Map、Cloneable、java.io.Serializable接口。HashMap 的实现不是同步的，这意味着它不是线程安全的。它的key、value都可以为null。此外，HashMap中的映射不是有序的。
 
 #### 实现原理
+HashMap底层实现是数组，数组的每一项是一条链（Java8中是链或者红黑树），这样设计的目的是为了综合数组的快速访问性和链表的快速存储性。  
+HashMap通过hash的方法，使用put和get存储和获取对象。存储对象时，我们将K/V传给put方法时，它调用hashCode计算hash从而得到bucket位置，进一步存储，HashMap会根据当前bucket的占用情况自动调整容量(超过Load Facotr则resize为原来的2倍)。获取对象时，我们将K传给get，它调用hashCode计算hash从而得到bucket位置，并进一步调用equals()方法确定键值对。如果发生碰撞的时候，Hashmap通过链表将产生碰撞冲突的元素组织起来，在Java 8中，如果一个bucket中碰撞冲突的元素超过某个限制(默认是8)，则使用红黑树来替换链表，从而提高速度。
 
 #### 使用注意
+* 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定HashMap实例的容量，指定具体的大小（由于HashMap的特殊扩容算法，建议使用guava的工具类Maps.newHashMapWithExpectedSize(7)去创建容器实例）。
+* 由于HashMap的存储与查找是基于key对象类型的hashCode()和equals()方法的，所以在自定义的key类型中重写hashCode()和equals()方法时一定要慎重，避免由于重写实现不当而导致在HashMap的查询、存储上引起性能、错误等问题。
+* HashMap非线程安全，即任一时刻可以有多个线程同时写HashMap，可能会导致数据的不一致。如果需要满足线程安全，可以用 Collections的synchronizedMap方法使HashMap具有线程安全的能力，或者使用ConcurrentHashMap。
 
 ## 功能对比
 
@@ -165,3 +408,4 @@ LinkedHashMap|否|是|否|否|*2|使用散列+双向链表结构存储，<br/>�
 [CopyOnWriteArrayList与Collections.synchronizedList的性能对比](http://blog.csdn.net/zljjava/article/details/48139465)  
 [聊聊并发-Java中的Copy-On-Write容器](http://ifeve.com/java-copy-on-write/)  
 [ConcurrentLinkedQueue源码分析](http://www.zsfblues.com/2016/06/15/ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/)  
+[Java和guava关于hashmap在初始化的时候最好给个初始容量，避免扩容引起性能问题的探究。](http://blog.csdn.net/qq_27093465/article/details/52401308)  
