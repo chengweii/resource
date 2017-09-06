@@ -5,8 +5,8 @@
 
 ### ArrayList
 ArrayList实现了List接口，是顺序容器，即元素存放的数据与放进去的顺序相同，允许放入null元素，底层通过对象数组实现。  
-该类还实现了Serializable、Cloneable接口，支持序列化和克隆。  
-除该类未实现同步外，其余跟Vector大致相同。  
+ArrayList还实现了Serializable、Cloneable接口，支持序列化和克隆。  
+ArrayList除了未实现同步外，其余实现与Vector大致相同。  
 
 #### 实现原理
 ArrayList内部封装了一个Object类型的数组，从一般的意义来说，它和数组没有本质的差别，甚至于ArrayList的许多方法，如index、indexOf、contains、sort等都是在内部数组的基础上直接调用Array的对应方法。  
@@ -211,7 +211,8 @@ public static void main(String[] args) {
 * 尽管Vector是同步的，但其由于在操作上大量使用synchronized关键字,这种方式严重影响效率,在多线程场景下，还是推荐使用CopyOnWriteArrayList。(注意CopyOnWriteArrayList的实现机制，导致它只能保证数据最终一致性，无法保证实时一致；还有比较占用内存，容易引发GC问题，所以请慎重使用。)
 
 ### CopyOnWriteArrayList
-CopyOnWrite容器即写时复制的容器。通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。CopyOnWrite容器非常有用，可以在非常多的并发场景中使用到。
+CopyOnWrite容器即写时复制的容器。  
+通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。CopyOnWrite容器非常有用，可以在非常多的并发场景中使用到。
 
 #### 实现原理
 在使用CopyOnWriteArrayList之前,是需要加锁的，否则多线程写的时候会Copy出N个副本出来。
@@ -255,7 +256,12 @@ public E get(int index) {
 * CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
 
 ### LinkedList
-LinkedList是基于双向链表实现的，插入删除操作性能优异，随机访问能力很差，无容量限制。LinkedList允许null元素。LinkedList还实现了Deque接口，可用作堆栈、队列或双端队列。注意，该类未实现同步，是非线程安全的。
+LinkedList是基于双向链表实现的。  
+基于链表数据结构的特性，LinkedList的插入删除操作性能表现优异，但是随机访问能力很差。  
+LinkedList无容量限制。  
+LinkedList允许null元素。  
+LinkedList还实现了Deque接口，可用作堆栈、队列或双端队列。  
+注意，LinkedList未实现同步，是非线程安全的。
 
 #### 实现原理
 ①数据存储是基于双向链表实现的。  
@@ -315,7 +321,8 @@ public class LinkedList<E>
 ## 队列
 
 ### Stack
-Stack类表示后进先出（LIFO）的对象堆栈。它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。  
+Stack类表示后进先出（LIFO）的对象堆栈。  
+它通过五个操作对类Vector进行了扩展 ，允许将向量视为堆栈。它提供了通常的push和pop操作，以及取堆栈顶点的peek方法、测试堆栈是否为空的empty方法、在堆栈中查找项并确定到堆栈顶距离的search方法。  
 通过继承Vector类，Stack类可以很容易的实现他本身的功能。因为大部分的功能在Vector里面已经提供支持了。由于Vector是通过数组实现的，这就意味着，Stack也是通过数组实现的，而非链表。
 
 #### 实现原理
@@ -385,10 +392,14 @@ ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，�
 ## 哈希表
 
 ### HashMap
-HashMap 是一个散列表，它存储的内容是键值对(key-value)映射。HashMap 继承于AbstractMap，实现了Map、Cloneable、java.io.Serializable接口。HashMap 的实现不是同步的，这意味着它不是线程安全的。它的key、value都可以为null。此外，HashMap中的映射不是有序的。
+HashMap 是一个散列表，它存储的内容是键值对(key-value)映射。  
+HashMap 继承于AbstractMap，实现了Map、Cloneable、java.io.Serializable接口。  
+HashMap 的实现不是同步的，这意味着它不是线程安全的。它的key、value都可以为null。  
+HashMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是 O(1) 。  
+此外，HashMap中的映射不是有序的。
 
 #### 实现原理
-HashMap底层实现是数组，数组的每一项是一条链（Java8中是链或者红黑树），这样设计的目的是为了综合数组的快速访问性和链表的快速存储性。  
+HashMap底层实现是数组，数组的每一项是一条链表（Java8中是链表或者红黑树），这样设计的目的是为了综合数组的快速访问性和链表的快速存储性。  
 HashMap通过hash的方法，使用put和get存储和获取对象。存储对象时，我们将K/V传给put方法时，它调用hashCode计算hash从而得到bucket位置，进一步存储，HashMap会根据当前bucket的占用情况自动调整容量(超过Load Facotr则resize为原来的2倍)。获取对象时，我们将K传给get，它调用hashCode计算hash从而得到bucket位置，并进一步调用equals()方法确定键值对。如果发生碰撞的时候，Hashmap通过链表将产生碰撞冲突的元素组织起来，在Java 8中，如果一个bucket中碰撞冲突的元素超过某个限制(默认是8)，则使用红黑树来替换链表，从而提高速度。
 
 #### 使用注意
@@ -397,11 +408,43 @@ HashMap通过hash的方法，使用put和get存储和获取对象。存储对象
 * HashMap未实现同步，是非线程安全的，即任一时刻可以有多个线程同时写HashMap，可能会导致数据的不一致。如果需要满足线程安全，可以用 Collections的synchronizedMap方法使HashMap具有线程安全的能力，或者使用ConcurrentHashMap。
 
 ### TreeMap
+TreeMap 是一个有序的key-value集合，它是通过红黑树实现的。  
+TreeMap 继承于AbstractMap，所以它是一个Map，即一个key-value集合。  
+TreeMap 实现了NavigableMap接口，意味着它支持一系列的导航方法。比如返回有序的key集合。  
+TreeMap 实现了Cloneable接口，意味着它能被克隆。  
+TreeMap 实现了java.io.Serializable接口，意味着它支持序列化。   
+TreeMap 支持根据其键的自然顺序进行排序，或者根据创建映射时提供的 Comparator 进行排序。  
+TreeMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是 O(log(n))。  
+另外，TreeMap 是非同步的。 它的iterator 方法返回的迭代器是fail-fast的。  
+
 #### 实现原理
+TreeMap基于红黑树（Red-Black tree）实现。创建树节点时TreeMap根据其键的自然顺序进行排序，或者根据创建TreeMap时提供的 Comparator 进行排序，具体取决于使用的构造方法。TreeMap的有序遍历是通过 R-B tree LDR(红黑树中序遍历)算法保证的。
+
 #### 使用注意
 
+* TreeMap是通过红黑树实现的，更适用于对顺序有要求的场景，对于插入顺序有要求的可以使用LinkedHashMap，而对于顺序完全没有要求的，为了更好的读写性能还是建议使用HashMap。
+* TreeMap默认支持排序，前提是key类型必须实现java.lang.Comparable接口，否则运行时会报错。
+```java
+public class TreeMapTest {
+	public static void main(String[] args) {
+		Map<NoComparable,String> treeMap=new TreeMap<NoComparable,String>();
+		treeMap.put(new NoComparable(), "NoComparable");
+		System.out.println(treeMap);//TreeMapTest$NoComparable cannot be cast to java.lang.Comparable
+	}
+	
+	public static class NoComparable{
+	}
+}
+```
+
 ### LinkedHashMap
+LinkedHashMap是Hash表和链表的实现，并且依靠着双向链表保证了迭代顺序是插入的顺序。  
+LinkedHashMap允许使用null值和null键。  
+注意，此实现不是同步的。
+
 #### 实现原理
+LinkedHashMap实现与HashMap的不同之处在于，后者维护着一个运行于所有条目的双重链接列表。此链接列表定义了迭代顺序，该迭代顺序可以是插入顺序或者是访问顺序。
+
 #### 使用注意
 
 ## 功能对比
@@ -430,3 +473,5 @@ LinkedHashMap|否|是|否|否|*2|使用散列+双向链表结构存储，<br/>�
 [ConcurrentLinkedQueue源码分析](http://www.zsfblues.com/2016/06/15/ConcurrentLinkedQueue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/)  
 [Java和guava关于hashmap在初始化的时候最好给个初始容量，避免扩容引起性能问题的探究。](http://blog.csdn.net/qq_27093465/article/details/52401308)  
 [Java LinkedList的实现原理详解](http://blog.csdn.net/guoweimelon/article/details/50800730)  
+[TreeMap详细介绍(源码解析)和使用示例](http://www.cnblogs.com/skywang12345/p/3310928.html)  
+[哈希表和红黑树的对比](http://blog.csdn.net/ljlstart/article/details/51335687)  
