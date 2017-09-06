@@ -402,6 +402,111 @@ HashMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是
 #### 实现原理
 HashMap底层实现是数组，数组的每一项是一条链表（Java8中是链表或者红黑树），这样设计的目的是为了综合数组的快速访问性和链表的快速存储性。  
 HashMap通过hash的方法，使用put和get存储和获取对象。存储对象时，我们将K/V传给put方法时，它调用hashCode计算hash从而得到bucket位置，进一步存储，HashMap会根据当前bucket的占用情况自动调整容量(超过Load Facotr则resize为原来的2倍)。获取对象时，我们将K传给get，它调用hashCode计算hash从而得到bucket位置，并进一步调用equals()方法确定键值对。如果发生碰撞的时候，Hashmap通过链表将产生碰撞冲突的元素组织起来，在Java 8中，如果一个bucket中碰撞冲突的元素超过某个限制(默认是8)，则使用红黑树来替换链表，从而提高速度。
+```java
+public class HashMap<K,V> extends AbstractMap<K,V>
+    implements Map<K,V>, Cloneable, Serializable {
+    transient Node<K,V>[] table;
+    static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+        Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+        public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
+        public final boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof Map.Entry) {
+                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+                if (Objects.equals(key, e.getKey()) &&
+                    Objects.equals(value, e.getValue()))
+                    return true;
+            }
+            return false;
+        }
+        //...
+    }
+    public V get(Object key) {
+        Node<K,V> e;
+        return (e = getNode(hash(key), key)) == null ? null : e.value;
+    }
+    final Node<K,V> getNode(int hash, Object key) {
+        Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+            (first = tab[(n - 1) & hash]) != null) {
+            if (first.hash == hash && // always check first node
+                ((k = first.key) == key || (key != null && key.equals(k))))
+                return first;
+            if ((e = first.next) != null) {
+                if (first instanceof TreeNode)
+                    return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                do {
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        return e;
+                } while ((e = e.next) != null);
+            }
+        }
+        return null;
+    }
+    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+    public V put(K key, V value) {
+        return putVal(hash(key), key, value, false, true);
+    }
+    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+        else {
+            Node<K,V> e; K k;
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                e = p;
+            else if (p instanceof TreeNode)
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else {
+                for (int binCount = 0; ; ++binCount) {
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ++modCount;
+        if (++size > threshold)
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+    }
+}
+```
 
 #### 使用注意
 * 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定HashMap实例的容量，指定具体的大小（由于HashMap的特殊扩容算法，建议使用guava的工具类Maps.newHashMapWithExpectedSize(7)去创建容器实例）。
@@ -420,6 +525,106 @@ TreeMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是
 
 #### 实现原理
 TreeMap基于红黑树（Red-Black tree）实现。创建树节点时TreeMap根据其键的自然顺序进行排序，或者根据创建TreeMap时提供的 Comparator 进行排序，具体取决于使用的构造方法。TreeMap的有序遍历是通过 R-B tree LDR(红黑树中序遍历)算法保证的。
+```java
+public class TreeMap<K,V> extends AbstractMap<K,V>
+    implements NavigableMap<K,V>, Cloneable, java.io.Serializable
+{
+    //...
+    static final class Entry<K,V> implements Map.Entry<K,V> {
+        K key;
+        V value;
+        Entry<K,V> left;
+        Entry<K,V> right;
+        Entry<K,V> parent;
+        boolean color = BLACK;
+        Entry(K key, V value, Entry<K,V> parent) {
+            this.key = key;
+            this.value = value;
+            this.parent = parent;
+        }
+        //...
+    }
+    private final Comparator<? super K> comparator;
+    private transient Entry<K,V> root;
+
+    public TreeMap(Comparator<? super K> comparator) {
+        this.comparator = comparator;
+    }
+    final Entry<K,V> getEntry(Object key) {
+        // Offload comparator-based version for sake of performance
+        if (comparator != null)
+            return getEntryUsingComparator(key);
+        if (key == null)
+            throw new NullPointerException();
+        @SuppressWarnings("unchecked")
+            Comparable<? super K> k = (Comparable<? super K>) key;
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = k.compareTo(p.key);
+            if (cmp < 0)
+                p = p.left;
+            else if (cmp > 0)
+                p = p.right;
+            else
+                return p;
+        }
+        return null;
+    }
+    public V put(K key, V value) {
+        Entry<K,V> t = root;
+        if (t == null) {
+            compare(key, key); // type (and possibly null) check
+
+            root = new Entry<>(key, value, null);
+            size = 1;
+            modCount++;
+            return null;
+        }
+        int cmp;
+        Entry<K,V> parent;
+        // split comparator and comparable paths
+        Comparator<? super K> cpr = comparator;
+        if (cpr != null) {
+            do {
+                parent = t;
+                cmp = cpr.compare(key, t.key);
+                if (cmp < 0)
+                    t = t.left;
+                else if (cmp > 0)
+                    t = t.right;
+                else
+                    return t.setValue(value);
+            } while (t != null);
+        }
+        else {
+            if (key == null)
+                throw new NullPointerException();
+            @SuppressWarnings("unchecked")
+                Comparable<? super K> k = (Comparable<? super K>) key;
+            do {
+                parent = t;
+                cmp = k.compareTo(t.key);
+                if (cmp < 0)
+                    t = t.left;
+                else if (cmp > 0)
+                    t = t.right;
+                else
+                    return t.setValue(value);
+            } while (t != null);
+        }
+        Entry<K,V> e = new Entry<>(key, value, parent);
+        if (cmp < 0)
+            parent.left = e;
+        else
+            parent.right = e;
+        fixAfterInsertion(e);
+        size++;
+        modCount++;
+        return null;
+    }
+    //...
+}
+```    
 
 #### 使用注意
 
@@ -439,14 +644,71 @@ public class TreeMapTest {
 ```
 
 ### LinkedHashMap
-LinkedHashMap是Hash表和链表的实现，并且依靠着双向链表保证了迭代顺序是插入的顺序。  
+LinkedHashMap是Hash表和链表的实现，并且依靠着双向链表保证了迭代顺序是插入顺序或者最后访问顺序。  
 LinkedHashMap允许使用null值和null键。  
 注意，LinkedHashMap未实现同步，是非线程安全的。
 
 #### 实现原理
 对于LinkedHashMap而言，它继承于HashMap、底层使用哈希表与双向链表来保存所有元素。其基本操作与父类HashMap相似，它通过重写父类相关的方法，来实现自己的链接列表特性。
+```java
+public class LinkedHashMap<K,V> extends HashMap<K,V> implements Map<K,V>
+{
+    //...
+    static class Entry<K,V> extends HashMap.Node<K,V> {
+        Entry<K,V> before, after;
+        Entry(int hash, K key, V value, Node<K,V> next) {
+            super(hash, key, value, next);
+        }
+    }
+    public LinkedHashMap(int initialCapacity, float loadFactor) {  
+        super(initialCapacity, loadFactor);  
+        accessOrder = false;  
+    }
+    void addEntry(int hash, K key, V value, int bucketIndex) {  
+        createEntry(hash, key, value, bucketIndex);  
+        Entry<K,V> eldest = header.after;  
+        if (removeEldestEntry(eldest)) {  
+            removeEntryForKey(eldest.key);  
+        } else {  
+            if (size >= threshold)  
+                resize(2 * table.length);  
+        }  
+    }
+    void createEntry(int hash, K key, V value, int bucketIndex) {  
+        HashMap.Entry<K,V> old = table[bucketIndex];  
+        Entry<K,V> e = new Entry<K,V>(hash, key, value, old);  
+        table[bucketIndex] = e;  
+        e.addBefore(header);  
+        size++;  
+    }
+    private void addBefore(Entry<K,V> existingEntry) {  
+        after  = existingEntry;  
+        before = existingEntry.before;  
+        before.after = this;  
+        after.before = this;  
+    }
+    public V get(Object key) {  
+        Entry<K,V> e = (Entry<K,V>)getEntry(key);  
+        if (e == null)  
+            return null;  
+        e.recordAccess(this);  
+        return e.value;  
+    }
+    void recordAccess(HashMap<K,V> m) {  
+        LinkedHashMap<K,V> lm = (LinkedHashMap<K,V>)m;  
+        if (lm.accessOrder) {  
+            lm.modCount++;  
+            remove();  
+            addBefore(lm.header);  
+        }  
+    } 
+    //...
+}
+```
 
 #### 使用注意
+* LinkedHashMap定义了排序模式accessOrder，该属性为boolean型变量，对于访问顺序，为true；对于插入顺序，则为false。通过排序模式很适合构建LRU缓存。
+* LinkedHashMap继承于HashMap，所以HashMap需要注意的地方LinkedHashMap也需要特别注意。
 
 ## 功能对比
 
