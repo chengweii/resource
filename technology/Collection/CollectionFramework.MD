@@ -210,51 +210,6 @@ public static void main(String[] args) {
 * ArrayList的线程安全版本除了Vector之外，还可以通过Collections.synchronizedList方法生成同步代理对象获得线程安全的功能。
 * 尽管Vector是同步的，但其由于在操作上大量使用synchronized关键字,这种方式严重影响效率,在多线程场景下，还是推荐使用CopyOnWriteArrayList。(注意CopyOnWriteArrayList的实现机制，导致它只能保证数据最终一致性，无法保证实时一致；还有比较占用内存，容易引发GC问题，所以请慎重使用。)
 
-### CopyOnWriteArrayList
-CopyOnWrite容器即写时复制的容器。  
-通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。CopyOnWrite容器非常有用，可以在非常多的并发场景中使用到。
-
-#### 实现原理
-在使用CopyOnWriteArrayList之前,是需要加锁的，否则多线程写的时候会Copy出N个副本出来。
-
-```java
-/**
-* Appends the specified element to the end of this list.
-*
-* @param e element to be appended to this list
-* @return <tt>true</tt> (as specified by {@link Collection#add})
-*/
-public boolean add(E e) {
-    final ReentrantLock lock = this.lock;
-    lock.lock();
-    try {
-        Object[] elements = getArray();
-        int len = elements.length;
-        Object[] newElements = Arrays.copyOf(elements, len + 1);
-        newElements[len] = e;
-        setArray(newElements);
-        return true;
-    } finally {
-        lock.unlock();
-    }
-}
-```
-
-读的时候不需要加锁，如果读的时候有多个线程正在向CopyOnWriteArrayList添加数据，读还是会读到旧的数据，因为写的时候不会锁住旧的CopyOnWriteArrayList。
-
-```java
-public E get(int index) {
-    return get(getArray(), index);
-}
-```
-
-#### 使用注意
-* CopyOnWrite并发容器用于读多写少的并发场景。比如白名单，黑名单，商品类目的访问和更新场景，假如我们有一个搜索网站，用户在这个网站的搜索框中，输入关键字搜索内容，但是某些关键字不允许被搜索。这些不能被搜索的关键字会被放在一个黑名单当中，黑名单每天晚上更新一次。当用户搜索时，会检查当前关键字在不在黑名单当中，如果在，则提示不能搜索。
-* 使用时减少扩容开销。根据实际需要，初始化CopyOnWriteMap的大小，避免写时CopyOnWriteMap扩容的开销。
-* 使用批量添加。因为每次添加，容器每次都会进行复制，所以减少添加次数，可以减少容器的复制次数。
-* 因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象，容易引起内存问题。
-* CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
-
 ### LinkedList
 LinkedList是基于双向链表实现的。  
 基于链表数据结构的特性，LinkedList的插入删除操作性能表现优异，但是随机访问能力很差。  
@@ -317,6 +272,51 @@ public class LinkedList<E>
 #### 使用注意
 * LinkedList的特点是该数据结构的两端读写能力很快，所以其使用场景一般为堆栈、队列或双端队列。
 * LinkedList未实现同步，是非线程安全的，所以在多线程场景下建议使用CopyOnWriteArrayList。
+
+### CopyOnWriteArrayList
+CopyOnWrite容器即写时复制的容器。  
+通俗的理解是当我们往一个容器添加元素的时候，不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新的容器里添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的好处是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。CopyOnWrite容器非常有用，可以在非常多的并发场景中使用到。
+
+#### 实现原理
+在使用CopyOnWriteArrayList之前,是需要加锁的，否则多线程写的时候会Copy出N个副本出来。
+
+```java
+/**
+* Appends the specified element to the end of this list.
+*
+* @param e element to be appended to this list
+* @return <tt>true</tt> (as specified by {@link Collection#add})
+*/
+public boolean add(E e) {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        Object[] elements = getArray();
+        int len = elements.length;
+        Object[] newElements = Arrays.copyOf(elements, len + 1);
+        newElements[len] = e;
+        setArray(newElements);
+        return true;
+    } finally {
+        lock.unlock();
+    }
+}
+```
+
+读的时候不需要加锁，如果读的时候有多个线程正在向CopyOnWriteArrayList添加数据，读还是会读到旧的数据，因为写的时候不会锁住旧的CopyOnWriteArrayList。
+
+```java
+public E get(int index) {
+    return get(getArray(), index);
+}
+```
+
+#### 使用注意
+* CopyOnWrite并发容器用于读多写少的并发场景。比如白名单，黑名单，商品类目的访问和更新场景，假如我们有一个搜索网站，用户在这个网站的搜索框中，输入关键字搜索内容，但是某些关键字不允许被搜索。这些不能被搜索的关键字会被放在一个黑名单当中，黑名单每天晚上更新一次。当用户搜索时，会检查当前关键字在不在黑名单当中，如果在，则提示不能搜索。
+* 使用时减少扩容开销。根据实际需要，初始化CopyOnWriteMap的大小，避免写时CopyOnWriteMap扩容的开销。
+* 使用批量添加。因为每次添加，容器每次都会进行复制，所以减少添加次数，可以减少容器的复制次数。
+* 因为CopyOnWrite的写时复制机制，所以在进行写操作的时候，内存里会同时驻扎两个对象的内存，旧的对象和新写入的对象，容易引起内存问题。
+* CopyOnWrite容器只能保证数据的最终一致性，不能保证数据的实时一致性。所以如果你希望写入的的数据，马上能读到，请不要使用CopyOnWrite容器。
 
 ## 队列
 
@@ -394,9 +394,10 @@ ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，�
 ### HashMap
 HashMap 是一个散列表，它存储的内容是键值对(key-value)映射。  
 HashMap 继承于AbstractMap，实现了Map、Cloneable、java.io.Serializable接口。  
-HashMap 的实现不是同步的，这意味着它不是线程安全的。它的key、value都可以为null。  
+HashMap 的key、value都可以为null。  
 HashMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是 O(1) 。  
 此外，HashMap中的映射不是有序的。
+注意，HashMap未实现同步，是非线程安全的。  
 
 #### 实现原理
 HashMap底层实现是数组，数组的每一项是一条链表（Java8中是链表或者红黑树），这样设计的目的是为了综合数组的快速访问性和链表的快速存储性。  
@@ -415,7 +416,7 @@ TreeMap 实现了Cloneable接口，意味着它能被克隆。
 TreeMap 实现了java.io.Serializable接口，意味着它支持序列化。   
 TreeMap 支持根据其键的自然顺序进行排序，或者根据创建映射时提供的 Comparator 进行排序。  
 TreeMap 的基本操作 containsKey、get、put 和 remove 的时间复杂度是 O(log(n))。  
-另外，TreeMap 是非同步的。 它的iterator 方法返回的迭代器是fail-fast的。  
+注意，TreeMap未实现同步，是非线程安全的。  
 
 #### 实现原理
 TreeMap基于红黑树（Red-Black tree）实现。创建树节点时TreeMap根据其键的自然顺序进行排序，或者根据创建TreeMap时提供的 Comparator 进行排序，具体取决于使用的构造方法。TreeMap的有序遍历是通过 R-B tree LDR(红黑树中序遍历)算法保证的。
@@ -440,10 +441,10 @@ public class TreeMapTest {
 ### LinkedHashMap
 LinkedHashMap是Hash表和链表的实现，并且依靠着双向链表保证了迭代顺序是插入的顺序。  
 LinkedHashMap允许使用null值和null键。  
-注意，此实现不是同步的。
+注意，LinkedHashMap未实现同步，是非线程安全的。
 
 #### 实现原理
-LinkedHashMap实现与HashMap的不同之处在于，后者维护着一个运行于所有条目的双重链接列表。此链接列表定义了迭代顺序，该迭代顺序可以是插入顺序或者是访问顺序。
+对于LinkedHashMap而言，它继承于HashMap、底层使用哈希表与双向链表来保存所有元素。其基本操作与父类HashMap相似，它通过重写父类相关的方法，来实现自己的链接列表特性。
 
 #### 使用注意
 
