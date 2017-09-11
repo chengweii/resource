@@ -452,6 +452,12 @@ public class CopyOnWriteArrayList<E>
 }
 ```
 
+### [整理中]CopyOnWriteArraySet
+
+#### 实现原理
+
+#### 使用注意
+
 ## 队列
 
 ### Stack
@@ -503,6 +509,30 @@ public class Stack<E> extends Vector<E> {
 
 ### [整理中]ConcurrentLinkedQueue
 ConcurrentLinkedQueue是一个基于链接节点的无界线程安全队列，它采用先进先出的规则对节点进行排序，当我们添加一个元素的时候，它会添加到队列的尾部，当我们获取一个元素时，它会返回队列头部的元素。该队列为单向队列，对应双向队列的实现是ConcurrentLinkedDeque。基于CAS的“wait－free”（常规无等待）来实现，CAS并不是一个算法，它是一个CPU直接支持的硬件指令，这也就在一定程度上决定了它的平台相关性。
+
+#### 实现原理
+
+#### 使用注意
+
+### [整理中]ArrayBlockingQueue
+
+#### 实现原理
+
+#### 使用注意
+
+### [整理中]LinkedBlockingQueue
+
+#### 实现原理
+
+#### 使用注意
+
+### [整理中]DelayQueue
+
+#### 实现原理
+
+#### 使用注意
+
+### [整理中]SynchronousQueue
 
 #### 实现原理
 
@@ -728,6 +758,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 * 由于数组容量不足而自动扩容的机制会造成性能损耗，在实际添加大量元素前，可以提前预估并指定HashMap实例的容量，指定具体的大小（由于HashMap的特殊扩容算法，建议使用guava的工具类Maps.newHashMapWithExpectedSize(7)去创建容器实例）。
 * 由于HashMap的存储与查找是基于key对象类型的hashCode()和equals()方法的，所以在自定义的key类型中重写hashCode()和equals()方法时一定要慎重，避免由于重写实现不当而导致在HashMap的查询、存储上引起性能、错误等问题。
 * HashMap未实现同步，是非线程安全的，即任一时刻可以有多个线程同时写HashMap，可能会导致数据的不一致。如果需要满足线程安全，可以用 Collections的synchronizedMap方法使HashMap具有线程安全的能力，或者使用ConcurrentHashMap。
+
+### [整理中]ConcurrentHashMap
+
+#### 实现原理
+
+#### 使用注意
 
 ### TreeMap
 TreeMap 是一个有序的key-value集合，它是通过红黑树实现的。  
