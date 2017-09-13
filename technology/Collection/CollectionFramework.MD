@@ -1046,7 +1046,6 @@ HashMap|否|否|否|否|*2|使用散列结构存储，<br/>插入、删除元素
 TreeMap|否|否|否|是|+1|使用红黑树结构存储，默认升序，<br/>插入、删除、随机访问元素较HashMap慢。 
 LinkedHashMap|否|是|否|否|*2|使用散列+双向链表结构存储，<br/>插入、删除、随机访问元素较HashMap慢。  
 
-## 线程安全
 # 参考文献
 [ArrayList详解](http://www.cnblogs.com/qiutianyou/p/5440065.html)  
 [Java集合---ArrayList的实现原理](http://www.cnblogs.com/ITtangtang/p/3948555.html)  
