@@ -68,6 +68,11 @@ volatile修饰的变量的获取会强制线程同步在主内存的变量数据
 ### 什么是线程安全？
 当多个线程访问一个类时，如果不用考虑这些线程在运行时环境下的调度和交替执行，并且不需要额外的同步及在调用方法代码时不必做其他的协调，这个类的行为仍是正确的，那么称这个类是线程安全的。
 ### ConcurrentHashMap的原理？
+### SimpleDateFormat存在线程安全问题吗？
+在设计工具类时为了效率，会将其设计为单例对象，但是DateFormat 和 SimpleDateFormat 类不都是线程安全的，在多线程环境下调用 format() 和 parse() 方法应该使用同步代码来避免问题（该方法中涉及操作对象成员变量calendar）。解决办法包括：  
+* 需要的时候创建新实例
+* 使用同步：同步SimpleDateFormat对象
+* 使用ThreadLocal
 
 # 参考文献
 [JAVA CAS原理深度分析](http://www.cnblogs.com/zhuawang/p/4196904.html)  
