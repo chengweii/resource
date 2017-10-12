@@ -76,3 +76,4 @@ volatile修饰的变量的获取会强制线程同步在主内存的变量数据
 
 # 参考文献
 [JAVA CAS原理深度分析](http://www.cnblogs.com/zhuawang/p/4196904.html)  
+[深入理解Java：SimpleDateFormat安全的时间格式化](http://www.cnblogs.com/peida/archive/2013/05/31/3070790.html)  
